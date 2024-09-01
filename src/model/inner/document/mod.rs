@@ -41,19 +41,19 @@ impl Document {
     /**
     Sets the environment variables specified in this `Document`.
 
-    If a variable is already set, this function will not override it.
-    Instead, this function will return the indexes of all preexisting variables.
+    If a variable is already set, this method will not override it.
+    Instead, this method will return the indexes of all preexisting variables.
 
     # Safety
-    This function has the same safety issues as the underlying [`std::env::set_var`].
+    This function has the same safety issues as the underlying function [`std::env::set_var`].
 
     To summarize:
-    * **Windows:** This function is always safe to call, including on multi-threaded programs.. Consider using [`set_vars_windows`](Document::set_vars_windows) instead.
+    * **Windows:** This method is always safe to call, including on multi-threaded programs. Consider using [`set_vars_windows`](Document::set_vars_windows) instead.
 
-    * **Single-threaded programs:** This function is always safe to call.
+    * **Single-threaded programs:** This method is always safe to call.
 
-    * **Multi-threaded programs:** This function is unsafe on multi-threaded programs, as concurrently setting environment variables
-      on non-Windows platforms is inherently not thread-safe. However, this function is likely
+    * **Multi-threaded programs:** This method is unsafe on multi-threaded programs, as concurrently setting environment variables
+      on non-Windows platforms is inherently not thread-safe. However, this method is likely
       safe to call if called and completed before any other threads are spawned, such as in the
       first lines of the `main` function.
     */
@@ -73,14 +73,19 @@ impl Document {
         already_set
     }
 
-    #[cfg(target_family = "windows")]
     /**
-    Windows-exclusive convenience function wrapping [`set_vars`](Document::set_vars).
+    Windows-exclusive convenience wrapper for [`set_vars`](Document::set_vars).
 
-    This function is safe to call, as [`std::env::set_var`] is always safe to call on Windows.
+    This method is safe to call, as [`std::env::set_var`] is always safe to call on Windows.
     */
     pub fn set_vars_windows(&self) {
-        unsafe { self.set_vars() }
+        #[cfg(not(target_family = "windows"))]
+        panic!("you can only use this method on windows!");
+
+        #[allow(unreachable_code)]
+        unsafe {
+            self.set_vars();
+        }
     }
 }
 
