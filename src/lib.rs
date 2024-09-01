@@ -3,7 +3,7 @@
 mod test_utils {
     use std::fmt::Debug;
 
-    fn parse_str<P: crate::Parse<Err: Debug>>(s: &str) -> P {
+    pub fn parse_str<P: crate::Parse<Err: Debug>>(s: &str) -> P {
         P::parse_str(s).unwrap_or_else(|err| {
             use colored::Colorize;
 

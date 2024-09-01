@@ -3,6 +3,7 @@ use crate::Set;
 use std::fmt;
 
 mod parse;
+pub use parse::Error as ParseError;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Table {
@@ -13,6 +14,11 @@ pub struct Table {
 impl Table {
     pub fn name(&self) -> &crate::Key {
         &self.name
+    }
+
+    #[allow(dead_code)] // used in a test macro
+    pub(crate) fn new(name: crate::Key, fields: Set<Field>) -> Self {
+        Self { name, fields }
     }
 
     pub fn fields(&self) -> Fields {

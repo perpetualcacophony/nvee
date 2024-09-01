@@ -1,3 +1,7 @@
+mod parse;
+pub use parse::Error as ParseError;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Item {
     Field(crate::Field),
     Table(crate::Table),
