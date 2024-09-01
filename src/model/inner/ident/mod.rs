@@ -63,36 +63,22 @@ impl Parse for Ident {
 }
 
 #[cfg(test)]
-mod tests {
-    fn from_str(s: &str) -> super::Ident {
-        super::Ident(s.to_owned())
-    }
+pub use tests::CONSTRUCTOR;
 
-    fn parse_str(s: &str) -> Result<super::Ident, super::ParseError> {
-        use crate::Parse;
-        super::Ident::parse_str(s)
-    }
+#[cfg(test)]
+mod tests {
+    pub const CONSTRUCTOR: fn(&'static str) -> super::Ident = |s| super::Ident(s.to_owned());
 
     #[test]
     fn valid() {
-        fn assert_valid(iter: impl IntoIterator<Item = &'static str>) {
-            for s in iter {
-                assert_eq!(parse_str(s).expect("parsing should not fail"), from_str(s))
-            }
+        fn test_valid(iter: impl IntoIterator<Item = &'static str>) {
+            crate::test_valid(CONSTRUCTOR, iter.into_iter().map(|s| (s, s)))
         }
 
-        assert_valid(["amber", "beep_boop", "kv2", "2kv", "55555"]);
+        test_valid(["amber", "beep_boop", "kv2", "2kv", "55555"]);
     }
 
-    #[test]
-    #[should_panic]
-    fn invalid() {
-        fn assert_invalid(iter: impl IntoIterator<Item = &'static str>) {
-            for s in iter {
-                parse_str(s).unwrap();
-            }
-        }
-
-        assert_invalid(["", ".", "...", "???"]);
+    test_invalid! {
+        super::Ident: "", ".", " ", "...", "???"
     }
 }
