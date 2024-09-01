@@ -9,6 +9,15 @@ pub enum Value {
     Integer(u64),
 }
 
+impl Value {
+    pub fn var(&self) -> String {
+        match self {
+            Self::String(s) => s.to_owned(),
+            Self::Integer(int) => int.to_string(),
+        }
+    }
+}
+
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

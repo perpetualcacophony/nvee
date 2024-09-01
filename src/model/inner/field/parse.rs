@@ -78,6 +78,6 @@ mod tests {
     }
 
     test_invalid! {
-        super::Field: "", ".", " ", "...", "???", " = ", "beep. = 100"
+        super::Field: "", ".", " ", "...", "???", " = ", "beep. = 100", "mop=340"
     }
 }

@@ -31,6 +31,17 @@ impl Key {
     pub fn segments(&self) -> Segments {
         Segments::from_path(self)
     }
+
+    pub fn var_name(&self) -> String {
+        let vec: Vec<String> = self.segments().map(|id| id.to_uppercase()).collect();
+        vec.join("_")
+    }
+
+    pub fn chain(&self, rhs: &Self) -> Self {
+        Self {
+            segments: self.segments().chain(rhs.segments()).cloned().collect(),
+        }
+    }
 }
 
 impl fmt::Display for Key {

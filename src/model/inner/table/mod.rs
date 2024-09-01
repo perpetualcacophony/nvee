@@ -16,6 +16,12 @@ impl Table {
     pub fn fields(&self) -> Fields {
         Fields::from_table(self)
     }
+
+    pub fn vars(&self) -> impl Iterator<Item = String> + '_ {
+        let base = self.name();
+        self.fields()
+            .map(|field| format!("{}={}", base.chain(field.key()), field.value().var()))
+    }
 }
 
 impl fmt::Display for Table {

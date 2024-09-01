@@ -17,6 +17,10 @@ impl Field {
     pub fn value(&self) -> &crate::Value {
         &self.value
     }
+
+    pub fn var(&self) -> String {
+        format!("{}={}", self.key().var_name(), self.value().var())
+    }
 }
 
 impl fmt::Display for Field {
