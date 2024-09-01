@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use crate::{Item, Parse, Set};
 
 mod parse;
+pub use parse::Error as ParseError;
 
 use super::{Key, Value};
 

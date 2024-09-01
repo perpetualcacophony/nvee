@@ -67,3 +67,50 @@ pub use parser::{Parse, Parser};
 
 pub mod set;
 pub use set::Set;
+
+pub enum Error {
+    ParseDocument(model::document::ParseError),
+    Io(std::io::Error),
+}
+
+impl From<model::document::ParseError> for Error {
+    fn from(value: model::document::ParseError) -> Self {
+        Self::ParseDocument(value)
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(value: std::io::Error) -> Self {
+        Self::Io(value)
+    }
+}
+
+#[cfg(not(target_family = "windows"))]
+pub fn from_path(path: impl AsRef<std::path::Path>) -> Result<(), Error> {
+    let mut doc = Document::parse_str(&std::fs::read_to_string(&path)?)?;
+
+    if let Some(s) = path.as_ref().file_stem() {
+        if let Some(s) = s.to_str() {
+            doc.set_basename(s.to_owned());
+        }
+    }
+
+    unsafe {
+        doc.set_vars();
+    }
+    Ok(())
+}
+
+#[cfg(target_family = "windows")]
+pub fn from_path(path: impl AsRef<std::path::Path>) -> Result<(), Error> {
+    let mut doc = Document::parse_str(&std::fs::read_to_string(path)?)?;
+
+    if let Some(s) = path.as_ref().file_stem() {
+        if let Some(s) = s.to_str() {
+            doc.set_basename(s.to_owned());
+        }
+    }
+
+    doc.set_vars_windows();
+    Ok(())
+}
