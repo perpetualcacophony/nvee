@@ -23,6 +23,7 @@ impl From<value::ParseError> for Error {
     }
 }
 
+impl crate::Sealed for Field {}
 impl Parse for Field {
     type Err = Error;
 
@@ -37,6 +38,7 @@ impl Parse for Field {
 
 struct Separator;
 
+impl crate::Sealed for Separator {}
 impl Parse for Separator {
     type Err = ();
 

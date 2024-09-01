@@ -13,14 +13,6 @@ pub struct Key {
 impl Key {
     pub const SEPARATOR: char = '.';
 
-    fn try_from_vec(vec: Vec<Ident>) -> Option<Self> {
-        if vec.is_empty() {
-            None
-        } else {
-            Some(Self { segments: vec })
-        }
-    }
-
     pub fn last_segment(&self) -> &Ident {
         self.segments
             .last()

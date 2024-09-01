@@ -31,6 +31,7 @@ impl Error {
     }
 }
 
+impl crate::Sealed for Table {}
 impl Parse for Table {
     type Err = Error;
 

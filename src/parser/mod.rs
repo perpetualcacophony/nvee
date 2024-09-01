@@ -22,12 +22,19 @@ impl<'i> Parser<'i> {
     }
 }
 
-pub trait Parse: Sized {
+pub trait Sealed {}
+
+pub trait Parse: Sized + Sealed {
     type Err;
 
     fn parse(input: &mut Parser<'_>) -> Result<Self, Self::Err>;
+
+    fn parse_str(s: &str) -> Result<Self, Self::Err> {
+        Parser::new(s).parse()
+    }
 }
 
+impl Sealed for char {}
 impl Parse for char {
     type Err = ();
 
@@ -36,6 +43,7 @@ impl Parse for char {
     }
 }
 
+impl Sealed for u64 {}
 impl Parse for u64 {
     type Err = std::num::ParseIntError;
 

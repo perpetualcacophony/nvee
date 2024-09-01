@@ -16,6 +16,7 @@ impl From<ParseIntError> for Error {
     }
 }
 
+impl crate::Sealed for Value {}
 impl Parse for Value {
     type Err = Error;
 

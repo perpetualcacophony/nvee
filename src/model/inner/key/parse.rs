@@ -2,6 +2,7 @@ use crate::{model::ident, Parse};
 
 use super::Key;
 
+impl crate::Sealed for Key {}
 impl Parse for Key {
     type Err = Error;
 
