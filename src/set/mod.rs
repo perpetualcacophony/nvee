@@ -2,18 +2,18 @@ use std::{collections::HashSet, hash::Hash};
 
 use crate::Key;
 
-#[derive(Clone, Debug)]
-pub struct Set<Item> {
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Set<Item: KeyEq> {
     inner: HashSet<HashByKey<Item>>,
 }
 
-impl<T> Set<T> {
+impl<T: KeyEq> Set<T> {
     pub fn new() -> Self {
         Self::default()
     }
 }
 
-impl<T> Default for Set<T> {
+impl<T: KeyEq> Default for Set<T> {
     fn default() -> Self {
         Self {
             inner: Default::default(),

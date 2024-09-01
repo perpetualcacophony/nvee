@@ -10,7 +10,7 @@ impl Parse for Key {
         let mut segments = Vec::new();
 
         match input.peek_char() {
-            Some('_') | None => {
+            Some(' ') | None => {
                 return Err(Error {
                     meta: Meta::EmptyInput,
                 })
@@ -23,8 +23,8 @@ impl Parse for Key {
             _ => segments.push(input.parse()?),
         }
 
-        loop {
-            if input.peek_char() == Some(' ') || input.peek_char().is_none() {
+        while let Some(next) = input.peek_char() {
+            if !crate::model::ident::CHAR_LEGAL(next) && next != '.' {
                 break;
             }
 

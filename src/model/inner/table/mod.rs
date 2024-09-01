@@ -4,6 +4,7 @@ use std::fmt;
 
 mod parse;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Table {
     name: crate::Key,
     fields: Set<Field>,

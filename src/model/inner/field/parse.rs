@@ -57,16 +57,22 @@ impl Parse for Separator {
 }
 
 #[cfg(test)]
+pub use tests::CONSTRUCTOR;
+
+#[cfg(test)]
 mod tests {
     use crate::Value;
+
+    pub const CONSTRUCTOR: fn((&'static [&'static str], Value)) -> super::Field =
+        |(key, value)| super::Field {
+            key: crate::model::key::CONSTRUCTOR(key),
+            value,
+        };
 
     #[test]
     fn valid() {
         crate::test_valid(
-            |(key, value)| super::Field {
-                key: crate::model::key::CONSTRUCTOR(key),
-                value,
-            },
+            CONSTRUCTOR,
             [
                 ("preen = 100", (["preen"].as_slice(), Value::Integer(100))),
                 (
