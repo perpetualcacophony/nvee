@@ -28,3 +28,9 @@ impl fmt::Display for Field {
         write!(f, "{key} = {value}", key = self.key(), value = self.value())
     }
 }
+
+impl crate::set::KeyEq for Field {
+    fn key(&self) -> &super::Key {
+        self.key()
+    }
+}

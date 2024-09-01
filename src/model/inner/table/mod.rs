@@ -1,5 +1,6 @@
 use crate::Field;
-use std::{collections::HashSet as Set, fmt};
+use crate::Set;
+use std::fmt;
 
 mod parse;
 
@@ -53,5 +54,11 @@ impl<'table> Iterator for Fields<'table> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+}
+
+impl crate::set::KeyEq for Table {
+    fn key(&self) -> &super::Key {
+        self.name()
     }
 }

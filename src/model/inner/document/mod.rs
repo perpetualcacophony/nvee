@@ -1,5 +1,5 @@
-use crate::Item;
+use crate::{Item, Set};
 
 pub struct Document {
-    items: Vec<Item>,
+    items: Set<Item>,
 }

@@ -1,4 +1,4 @@
-use std::collections::HashSet as Set;
+use crate::Set;
 
 use crate::{
     model::{field, key},
@@ -45,15 +45,12 @@ impl Parse for Table {
         let name = input.parse()?;
 
         let mut fields = Set::new();
-        let mut keys = Set::new();
 
         while let Ok(field) = input.parse::<Field>() {
-            if keys.contains(field.key()) {
-                return Err(Error::DuplicateKey(field.key().to_owned()));
+            let key = field.key().to_owned();
+            if !fields.insert(field) {
+                return Err(Error::DuplicateKey(key));
             }
-
-            keys.insert(field.key().clone());
-            fields.insert(field);
         }
 
         Ok(Self { name, fields })
