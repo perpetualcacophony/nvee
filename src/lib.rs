@@ -85,7 +85,6 @@ impl From<std::io::Error> for Error {
     }
 }
 
-#[cfg(not(target_family = "windows"))]
 pub fn from_path(path: impl AsRef<std::path::Path>) -> Result<(), Error> {
     let mut doc = Document::parse_str(&std::fs::read_to_string(&path)?)?;
 
@@ -95,22 +94,17 @@ pub fn from_path(path: impl AsRef<std::path::Path>) -> Result<(), Error> {
         }
     }
 
+    #[cfg(not(target_family = "windows"))]
     unsafe {
         doc.set_vars();
     }
+
+    #[cfg(target_family = "windows")]
+    doc.set_vars_windows();
+
     Ok(())
 }
 
-#[cfg(target_family = "windows")]
-pub fn from_path(path: impl AsRef<std::path::Path>) -> Result<(), Error> {
-    let mut doc = Document::parse_str(&std::fs::read_to_string(path)?)?;
-
-    if let Some(s) = path.as_ref().file_stem() {
-        if let Some(s) = s.to_str() {
-            doc.set_basename(s.to_owned());
-        }
-    }
-
-    doc.set_vars_windows();
-    Ok(())
+pub fn dotnvee() -> Result<(), Error> {
+    from_path(std::path::Path::new(".nvee"))
 }
