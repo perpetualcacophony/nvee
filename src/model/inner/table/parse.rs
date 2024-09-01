@@ -89,14 +89,24 @@ mod tests {
     fn valid() {
         crate::test_valid(
             |input: Table| input,
-            [(
-                "[mongodb]\nusername = \"kate\"\nport = 999",
-                construct! {
-                    ["mongodb"]
-                    "username" = Value::String("kate".to_owned())
-                    "port" = Value::Integer(999)
-                },
-            )],
+            [
+                (
+                    "[mongodb]\nusername = \"kate\"\nport = 999",
+                    construct! {
+                        ["mongodb"]
+                        "username" = Value::String("kate".to_owned())
+                        "port" = Value::Integer(999)
+                    },
+                ),
+                (
+                    "[mongo.db] username = \"kate\" port.alt = 999",
+                    construct! {
+                        ["mongo"."db"]
+                        "username" = Value::String("kate".to_owned())
+                        "port"."alt" = Value::Integer(999)
+                    },
+                ),
+            ],
         );
     }
 

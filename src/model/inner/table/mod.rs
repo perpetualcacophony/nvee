@@ -19,10 +19,10 @@ impl Table {
         Fields::from_table(self)
     }
 
-    pub fn vars(&self) -> impl Iterator<Item = String> + '_ {
+    pub fn vars(&self) -> impl Iterator<Item = (crate::Key, &crate::Value)> + '_ {
         let base = self.name();
         self.fields()
-            .map(|field| format!("{}={}", base.chain(field.key()), field.value().var()))
+            .map(|field| (base.chain(field.key()), field.value()))
     }
 }
 

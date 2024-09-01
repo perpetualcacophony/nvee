@@ -13,3 +13,18 @@ impl crate::set::KeyEq for Item {
 }
 
 impl crate::Sealed for Item {}
+
+impl Item {
+    pub fn vars(
+        &self,
+    ) -> Box<dyn Iterator<Item = (std::borrow::Cow<super::Key>, &crate::Value)> + '_> {
+        match self {
+            Self::Field(field) => {
+                Box::new([(std::borrow::Cow::Borrowed(field.key()), field.value())].into_iter())
+            }
+            Self::Table(table) => {
+                Box::new(table.vars().map(|(k, v)| (std::borrow::Cow::Owned(k), v)))
+            }
+        }
+    }
+}
