@@ -61,17 +61,22 @@ impl From<ident::ParseError> for Error {
 }
 
 #[cfg(test)]
+pub use tests::CONSTRUCTOR;
+
+#[cfg(test)]
 mod tests {
+    pub const CONSTRUCTOR: fn(&'static [&'static str]) -> super::Key = |input| super::Key {
+        segments: input
+            .iter()
+            .copied()
+            .map(crate::model::ident::CONSTRUCTOR)
+            .collect(),
+    };
+
     #[test]
     fn valid() {
         crate::test_valid(
-            |slice| super::Key {
-                segments: slice
-                    .iter()
-                    .copied()
-                    .map(crate::model::ident::CONSTRUCTOR)
-                    .collect(),
-            },
+            CONSTRUCTOR,
             [
                 ("preen", ["preen"].as_slice()),
                 ("beep.boop", ["beep", "boop"].as_slice()),

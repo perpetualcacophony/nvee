@@ -5,6 +5,7 @@ use crate::{
 
 use super::Field;
 
+#[derive(Debug)]
 pub enum Error {
     Key(key::ParseError),
     Separator,
@@ -52,5 +53,31 @@ impl Parse for Separator {
         } else {
             Ok(Self)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Value;
+
+    #[test]
+    fn valid() {
+        crate::test_valid(
+            |(key, value)| super::Field {
+                key: crate::model::key::CONSTRUCTOR(key),
+                value,
+            },
+            [
+                ("preen = 100", (["preen"].as_slice(), Value::Integer(100))),
+                (
+                    r#"beep.boop = "top""#,
+                    (["beep", "boop"].as_slice(), Value::String("top".to_owned())),
+                ),
+            ],
+        );
+    }
+
+    test_invalid! {
+        super::Field: "", ".", " ", "...", "???", " = ", "beep. = 100"
     }
 }

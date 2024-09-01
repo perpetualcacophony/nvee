@@ -5,6 +5,9 @@ use crate::Ident;
 mod parse;
 pub use parse::Error as ParseError;
 
+#[cfg(test)]
+pub use parse::CONSTRUCTOR;
+
 #[derive(Hash, Clone, Debug, PartialEq, Eq)]
 pub struct Key {
     segments: Vec<Ident>,
