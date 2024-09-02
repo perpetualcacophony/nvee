@@ -1,16 +1,15 @@
-use std::borrow::Cow;
-
-use crate::{Item, Parse, Set};
+use crate::{Field, Parse, Set, Table};
 
 mod parse;
 pub use parse::Error as ParseError;
 
 use super::{Key, Value};
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Document {
     basename: Option<String>,
-    items: Set<Item>,
+    fields: Set<Field>,
+    tables: Set<Table>,
 }
 
 impl Document {
@@ -24,15 +23,29 @@ impl Document {
         self.basename = Some(value)
     }
 
-    pub fn vars(&self) -> impl Iterator<Item = (Cow<Key>, &Value)> {
-        let vec: Vec<(Cow<Key>, &Value)> = if let Some(base) = self.base_key() {
-            self.items
-                .iter()
-                .flat_map(Item::vars)
-                .map(|(k, v)| (Cow::Owned(base.chain(&k)), v))
-                .collect()
-        } else {
-            self.items.iter().flat_map(Item::vars).collect()
+    pub fn fields(&self) -> impl Iterator<Item = &Field> {
+        self.fields.iter()
+    }
+
+    pub fn tables(&self) -> impl Iterator<Item = &Table> {
+        self.tables.iter()
+    }
+
+    pub fn vars(self) -> impl Iterator<Item = (Key, Value)> {
+        let base = self.base_key();
+
+        let vec: Vec<(_, _)> = {
+            let chained = self
+                .fields
+                .into_iter()
+                .chain(self.tables.into_iter().flat_map(Table::into_fields))
+                .map(Field::to_kv);
+
+            if let Some(base) = base {
+                chained.map(|(k, v)| (base.chain(&k), v)).collect()
+            } else {
+                chained.collect()
+            }
         };
 
         vec.into_iter()
@@ -57,7 +70,7 @@ impl Document {
       safe to call if called and completed before any other threads are spawned, such as in the
       first lines of the `main` function.
     */
-    pub unsafe fn set_vars(&self) -> Vec<String> {
+    pub unsafe fn set_vars(self) -> Vec<String> {
         let mut already_set = Vec::new();
 
         for (key, value) in self.vars() {
@@ -78,7 +91,7 @@ impl Document {
 
     This method is safe to call, as [`std::env::set_var`] is always safe to call on Windows.
     */
-    pub fn set_vars_windows(&self) {
+    pub fn set_vars_windows(self) {
         #[cfg(not(target_family = "windows"))]
         panic!("you can only use this method on windows!");
 
@@ -98,7 +111,7 @@ mod tests {
     use std::env;
 
     impl Document {
-        fn with_vars(&self, f: impl FnOnce()) {
+        fn with_vars(self, f: impl FnOnce()) {
             temp_env::with_vars(
                 self.vars()
                     .map(|(k, v)| (k.var_name(), Some(v.var())))

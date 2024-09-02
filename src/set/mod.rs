@@ -70,6 +70,29 @@ impl<'set, Item> Iterator for Iter<'set, Item> {
     }
 }
 
+pub struct IntoIter<Item> {
+    inner: std::collections::hash_set::IntoIter<HashByKey<Item>>,
+}
+
+impl<Item> Iterator for IntoIter<Item> {
+    type Item = Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().and_then(HashByKey::into_item)
+    }
+}
+
+impl<Item: KeyEq> IntoIterator for Set<Item> {
+    type IntoIter = IntoIter<Item>;
+    type Item = Item;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter {
+            inner: self.inner.into_iter(),
+        }
+    }
+}
+
 pub trait KeyEq: crate::Sealed {
     fn key(&self) -> &Key;
 
@@ -86,6 +109,14 @@ enum HashByKey<T> {
 
 impl<T> HashByKey<T> {
     fn item(&self) -> Option<&T> {
+        if let Self::Item(t) = self {
+            Some(t)
+        } else {
+            None
+        }
+    }
+
+    fn into_item(self) -> Option<T> {
         if let Self::Item(t) = self {
             Some(t)
         } else {

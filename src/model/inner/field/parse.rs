@@ -30,7 +30,7 @@ impl Parse for Field {
 
     fn parse(input: &mut crate::Parser<'_>) -> Result<Self, Self::Err> {
         let key = input.parse()?;
-        input.parse::<Separator>().map_err(|_| Error::Separator)?;
+        input.parse::<Separator>()?;
         let value = input.parse()?;
 
         Ok(Self { key, value })
@@ -41,18 +41,12 @@ struct Separator;
 
 impl crate::Sealed for Separator {}
 impl Parse for Separator {
-    type Err = ();
+    type Err = Error;
 
     fn parse(input: &mut crate::Parser<'_>) -> Result<Self, Self::Err> {
-        if input.next_char() != Some(' ') {
-            Err(())
-        } else if input.next_char() != Some('=') {
-            Err(())
-        } else if input.next_char() != Some(' ') {
-            Err(())
-        } else {
-            Ok(Self)
-        }
+        (input.parse_char(' ') && input.parse_char('=') && input.parse_char(' '))
+            .then_some(Self)
+            .ok_or(Error::Separator)
     }
 }
 

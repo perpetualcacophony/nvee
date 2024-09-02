@@ -1,16 +1,26 @@
-use crate::{model::item, set::KeyEq, Item, Key, Parse, Set};
+use crate::{
+    model::{field, table},
+    Key, Parse, Set,
+};
 
 use super::Document;
 
 #[derive(Debug)]
 pub enum Error {
     DuplicateKey(Key),
-    ParseItem(item::ParseError),
+    Field(field::ParseError),
+    Table(table::ParseError),
 }
 
-impl From<item::ParseError> for Error {
-    fn from(value: item::ParseError) -> Self {
-        Self::ParseItem(value)
+impl From<field::ParseError> for Error {
+    fn from(value: field::ParseError) -> Self {
+        Self::Field(value)
+    }
+}
+
+impl From<table::ParseError> for Error {
+    fn from(value: table::ParseError) -> Self {
+        Self::Table(value)
     }
 }
 
@@ -19,25 +29,36 @@ impl Parse for Document {
     type Err = Error;
 
     fn parse(input: &mut crate::Parser<'_>) -> Result<Self, Self::Err> {
-        let mut items = Set::new();
+        let mut fields = Set::new();
+        let mut tables = Set::new();
 
-        while let Ok(item) = input.parse::<Item>() {
-            let key = item.key().to_owned();
-            if !items.insert(item) {
-                return Err(Error::DuplicateKey(key));
+        while input.peek_char() != Some('[') {
+            fields.insert(input.parse()?);
+
+            while input.parse_char_with(|ch| matches!(ch, '\n')).is_some() {
+                // consume newlines
+            }
+        }
+
+        while input.peek_char().is_some() {
+            tables.insert(input.parse()?);
+
+            while input.parse_char_with(|ch| matches!(ch, '\n')).is_some() {
+                // mmm tasty newlines
             }
         }
 
         Ok(Self {
             basename: None,
-            items,
+            fields,
+            tables,
         })
     }
 }
 
 #[cfg(test)]
 pub(super) mod tests {
-    use crate::{Document, Item, Set, Table};
+    use crate::{Document, Set, Table};
 
     pub const EXAMPLE: &str = include_str!("example.nvee");
 
@@ -62,19 +83,20 @@ pub(super) mod tests {
     fn example() {
         use crate::Value;
 
-        let mut items = Set::new();
+        let mut tables = Set::new();
 
-        items.insert(Item::Table(table! {
+        tables.insert(table! {
             ["db"]
             "url" = Value::String("https://example.com".to_owned())
             "port" = Value::Integer(2020)
-        }));
+        });
 
         pretty_assertions::assert_eq!(
             crate::test_utils::parse_str::<Document>(EXAMPLE),
             Document {
                 basename: None,
-                items
+                tables,
+                ..Default::default()
             }
         )
     }

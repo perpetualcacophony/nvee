@@ -1,0 +1,7 @@
+author = "kate"
+
+[table]
+lucky_number = 777
+
+[another_table]
+even_luckier = 7777

@@ -4,9 +4,6 @@ pub use value::Value;
 pub mod table;
 pub use table::Table;
 
-pub mod item;
-pub use item::Item;
-
 pub mod field;
 pub use field::Field;
 

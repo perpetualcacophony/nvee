@@ -20,6 +20,17 @@ impl Field {
     pub fn value(&self) -> &crate::Value {
         &self.value
     }
+
+    pub fn to_kv(self) -> (crate::Key, crate::Value) {
+        (self.key, self.value)
+    }
+
+    pub fn with_parent(&self, key: &crate::Key) -> Self {
+        Self {
+            key: key.chain(self.key()),
+            value: self.value.clone(),
+        }
+    }
 }
 
 impl fmt::Display for Field {

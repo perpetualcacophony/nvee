@@ -7,29 +7,18 @@ impl Parse for Key {
     type Err = Error;
 
     fn parse(input: &mut crate::Parser<'_>) -> Result<Self, Self::Err> {
-        let mut segments = Vec::new();
-
-        match input.peek_char() {
-            Some(' ') | None => {
-                return Err(Error {
-                    meta: Meta::EmptyInput,
-                })
-            }
-            Some(Self::SEPARATOR) => {
-                return Err(Error {
-                    meta: Meta::LeadingSeparator,
-                })
-            }
-            _ => segments.push(input.parse()?),
+        if input.peek_char() == Some(Self::SEPARATOR) {
+            return Err(Error::LeadingSeparator);
         }
 
-        while let Some(next) = input.peek_char() {
-            if !crate::model::ident::CHAR_LEGAL(next) && next != '.' {
-                break;
-            }
+        let mut segments = vec![input.parse().map_err(|_| Error::EmptyInput)?];
 
-            input.next_char();
-            segments.push(input.parse()?);
+        loop {
+            if !input.parse_char(Self::SEPARATOR) {
+                break;
+            } else {
+                segments.push(input.parse()?);
+            }
         }
 
         Ok(Self { segments })
@@ -37,26 +26,15 @@ impl Parse for Key {
 }
 
 #[derive(Debug)]
-pub struct Error {
-    meta: Meta,
-}
-
-#[derive(Debug)]
-pub enum Meta {
+pub enum Error {
     EmptyInput,
-    ParseIdent(ident::ParseError),
+    Ident,
     LeadingSeparator,
 }
 
-impl From<ident::ParseError> for Meta {
-    fn from(value: ident::ParseError) -> Self {
-        Self::ParseIdent(value)
-    }
-}
-
 impl From<ident::ParseError> for Error {
-    fn from(value: ident::ParseError) -> Self {
-        Self { meta: value.into() }
+    fn from(_: ident::ParseError) -> Self {
+        Self::Ident
     }
 }
 

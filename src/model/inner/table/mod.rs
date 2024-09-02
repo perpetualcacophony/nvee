@@ -25,10 +25,11 @@ impl Table {
         Fields::from_table(self)
     }
 
-    pub fn vars(&self) -> impl Iterator<Item = (crate::Key, &crate::Value)> + '_ {
-        let base = self.name();
-        self.fields()
-            .map(|field| (base.chain(field.key()), field.value()))
+    pub fn into_fields(self) -> IntoFields {
+        IntoFields {
+            table_name: self.name,
+            inner: self.fields.into_iter(),
+        }
     }
 }
 
@@ -45,22 +46,41 @@ impl fmt::Display for Table {
 }
 
 pub struct Fields<'table> {
+    table_name: &'table crate::Key,
     inner: <&'table Set<Field> as IntoIterator>::IntoIter,
 }
 
 impl<'table> Fields<'table> {
     fn from_table(table: &'table Table) -> Self {
         Self {
+            table_name: table.name(),
             inner: table.fields.iter(),
         }
     }
 }
 
 impl<'table> Iterator for Fields<'table> {
-    type Item = &'table Field;
+    type Item = Field;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
+        self.inner
+            .next()
+            .map(|field| field.with_parent(self.table_name))
+    }
+}
+
+pub struct IntoFields {
+    table_name: crate::Key,
+    inner: <Set<Field> as IntoIterator>::IntoIter,
+}
+
+impl Iterator for IntoFields {
+    type Item = Field;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner
+            .next()
+            .map(|field| field.with_parent(&self.table_name))
     }
 }
 

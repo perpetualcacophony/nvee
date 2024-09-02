@@ -59,7 +59,7 @@ mod test_utils {
 use test_utils::{test_invalid, test_valid};
 
 pub mod model;
-pub use model::{Document, Field, Ident, Item, Key, Table, Value};
+pub use model::{Document, Field, Ident, Key, Table, Value};
 
 pub mod parser;
 pub(crate) use parser::Sealed;
@@ -68,6 +68,7 @@ pub use parser::{Parse, Parser};
 pub mod set;
 pub use set::Set;
 
+#[derive(Debug)]
 pub enum Error {
     ParseDocument(model::document::ParseError),
     Io(std::io::Error),

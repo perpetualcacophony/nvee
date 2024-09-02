@@ -16,16 +16,7 @@ impl Deref for Ident {
 }
 
 #[derive(Debug)]
-pub struct ParseError {
-    index: usize,
-    meta: ParseErrorMeta,
-}
-
-#[derive(Debug)]
-pub enum ParseErrorMeta {
-    IllegalCharacter(char),
-    EmptyInput,
-}
+pub struct ParseError;
 
 impl crate::Sealed for Ident {}
 impl Parse for Ident {
@@ -34,20 +25,12 @@ impl Parse for Ident {
     fn parse(input: &mut crate::Parser<'_>) -> Result<Self, Self::Err> {
         let mut s = String::new();
 
-        while let Some(next) = input.peek_char() {
-            if CHAR_LEGAL(next) {
-                s.push(next);
-                input.next_char();
-            } else {
-                break;
-            }
+        while let Some(ch) = input.parse_char_with(|ch| matches!(ch, 'a'..='z' | '0'..='9' | '_')) {
+            s.push(ch)
         }
 
         if s.is_empty() {
-            Err(ParseError {
-                index: 0,
-                meta: ParseErrorMeta::EmptyInput,
-            })
+            Err(ParseError)
         } else {
             Ok(Self(s))
         }

@@ -10,7 +10,8 @@ use super::Table;
 #[derive(Debug)]
 pub enum Error {
     Name(Option<key::ParseError>),
-    ParseField(field::ParseError),
+    Field(field::ParseError),
+    MissingDelimiter,
     DuplicateKey(Key),
 }
 
@@ -22,7 +23,7 @@ impl From<key::ParseError> for Error {
 
 impl From<field::ParseError> for Error {
     fn from(value: field::ParseError) -> Self {
-        Self::ParseField(value)
+        Self::Field(value)
     }
 }
 
@@ -37,26 +38,33 @@ impl Parse for Table {
     type Err = Error;
 
     fn parse(input: &mut crate::Parser<'_>) -> Result<Self, Self::Err> {
-        if input.next_char() != Some('[') {
+        if !input.parse_char('[') {
             return Err(Error::name());
         }
 
         let name = input.parse()?;
 
-        if input.next_char() != Some(']') {
+        if !input.parse_char(']') {
             return Err(Error::name());
         }
 
-        input.next_char();
-
         let mut fields = Set::new();
 
-        while let Ok(field) = input.parse::<Field>() {
+        input
+            .parse_char_with(|ch| matches!(ch, '\n' | ' '))
+            .ok_or(Error::MissingDelimiter)?;
+
+        while input
+            .peek_char()
+            .is_some_and(|ch| !matches!(ch, '[' | '\n'))
+        {
+            let field = input.parse::<Field>()?;
             let key = field.key().to_owned();
             if !fields.insert(field) {
                 return Err(Error::DuplicateKey(key));
             }
-            input.next_char();
+
+            input.parse_char_with(|ch| matches!(ch, '\n' | ' '));
         }
 
         Ok(Self { name, fields })

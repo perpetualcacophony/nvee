@@ -17,6 +17,21 @@ impl<'i> Parser<'i> {
         Some(ch)
     }
 
+    pub fn parse_char(&mut self, ch: char) -> bool {
+        self.parse_char_with(|next| next == ch).is_some()
+    }
+
+    pub fn parse_char_with(&mut self, matches: impl FnOnce(char) -> bool) -> Option<char> {
+        if let Some(next) = self.peek_char() {
+            if matches(next) {
+                self.next_char();
+                return Some(next);
+            }
+        }
+
+        None
+    }
+
     pub fn parse<P: Parse>(&mut self) -> Result<P, P::Err> {
         P::parse(self)
     }
@@ -34,15 +49,6 @@ pub trait Parse: Sized + Sealed {
     }
 }
 
-impl Sealed for char {}
-impl Parse for char {
-    type Err = ();
-
-    fn parse(input: &mut Parser<'_>) -> Result<Self, Self::Err> {
-        input.next_char().ok_or(())
-    }
-}
-
 impl Sealed for u64 {}
 impl Parse for u64 {
     type Err = std::num::ParseIntError;
@@ -50,7 +56,7 @@ impl Parse for u64 {
     fn parse(input: &mut Parser<'_>) -> Result<Self, Self::Err> {
         let mut digits = String::new();
 
-        while let Some(digit @ '0'..='9') = input.next_char() {
+        while let Some(digit) = input.parse_char_with(|ch| ch.is_ascii_digit()) {
             digits.push(digit)
         }
 
