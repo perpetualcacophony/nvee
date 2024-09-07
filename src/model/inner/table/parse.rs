@@ -10,7 +10,10 @@ use super::Table;
 #[derive(Debug)]
 pub enum Error {
     Name(Option<key::ParseError>),
-    Field(field::ParseError),
+    Field {
+        source: field::ParseError,
+        index: usize,
+    },
     MissingDelimiter,
     DuplicateKey(String),
 }
@@ -18,12 +21,6 @@ pub enum Error {
 impl From<key::ParseError> for Error {
     fn from(value: key::ParseError) -> Self {
         Self::Name(Some(value))
-    }
-}
-
-impl From<field::ParseError> for Error {
-    fn from(value: field::ParseError) -> Self {
-        Self::Field(value)
     }
 }
 
@@ -54,17 +51,25 @@ impl<'p> Parse<'p> for Table<'p> {
             .parse_char_with(|ch| matches!(ch, '\n' | ' '))
             .ok_or(Error::MissingDelimiter)?;
 
+        let mut field_counter = 0;
+
         while input
             .peek_char()
             .is_some_and(|ch| !matches!(ch, '[' | '\n'))
         {
-            let field = input.parse::<Field>()?;
-            let key = field.key().to_owned();
+            let field = input.parse::<Field>().map_err(|source| Error::Field {
+                source,
+                index: field_counter,
+            })?;
+
+            let key = field.key().to_string();
             if !fields.insert(field) {
-                return Err(Error::DuplicateKey(key.to_string()));
+                return Err(Error::DuplicateKey(key));
             }
 
             input.parse_char_with(|ch| matches!(ch, '\n' | ' '));
+
+            field_counter += 1;
         }
 
         Ok(Self { name, fields })

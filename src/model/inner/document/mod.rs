@@ -41,16 +41,11 @@ impl<'a> Document<'a> {
 
             if let Some(base) = base {
                 chained
-                    .map(move |field| {
-                        (
-                            base.chain(field.key()).to_string(),
-                            field.value().to_string(),
-                        )
-                    })
+                    .map(move |field| (base.chain(field.key()).var_name(), field.value().var()))
                     .collect()
             } else {
                 chained
-                    .map(|field| (field.key().to_string(), field.value().to_string()))
+                    .map(|field| (field.key().var_name(), field.value().var()))
                     .collect()
             }
         };

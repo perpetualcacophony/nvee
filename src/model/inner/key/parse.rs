@@ -11,7 +11,7 @@ impl<'p> Parse<'p> for Key<'p> {
             return Err(Error::LeadingSeparator);
         }
 
-        let mut segments = vec![input.parse().map_err(|_| Error::EmptyInput)?];
+        let mut segments = vec![input.parse()?];
 
         loop {
             if !input.parse_char(Self::SEPARATOR) {
@@ -27,7 +27,6 @@ impl<'p> Parse<'p> for Key<'p> {
 
 #[derive(Debug)]
 pub enum Error {
-    EmptyInput,
     Ident,
     LeadingSeparator,
 }

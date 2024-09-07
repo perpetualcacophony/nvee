@@ -26,6 +26,7 @@ impl<'p> Parse<'p> for Value<'p> {
             input.next_char();
 
             let s = input.parse_while(|ch| ch != &'"').unwrap_or_default();
+            input.next_char();
             Ok(Self::String(s))
         } else {
             Ok(Self::Integer(input.parse()?))

@@ -39,18 +39,14 @@ impl<'i> Parser<'i> {
     pub fn parse_while(&mut self, matches: impl FnMut(&char) -> bool) -> Option<&'i str> {
         let mut counter = 0;
 
-        for ch in self.input.chars().filter(matches) {
+        for ch in self.input.chars().take_while(matches) {
             counter += ch.len_utf8();
         }
 
         if counter != 0 {
             let output = &self.input[..counter];
 
-            if self.input.len() <= counter {
-                self.input = "";
-            } else {
-                self.input = &self.input[counter + 1..];
-            }
+            self.input = &self.input[counter..];
 
             Some(output)
         } else {

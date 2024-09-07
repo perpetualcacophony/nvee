@@ -7,12 +7,6 @@ pub const CHAR_LEGAL: fn(char) -> bool = |ch| matches!(ch, 'a'..='z' | '0'..='9'
 #[derive(Hash, Debug, Clone, PartialEq, Eq, Copy)]
 pub struct Ident<'s>(&'s str);
 
-impl<'s> Ident<'s> {
-    pub fn into_owned(self) -> IdentOwned {
-        IdentOwned(self.0.to_owned())
-    }
-}
-
 impl Deref for Ident<'_> {
     type Target = str;
 
@@ -33,15 +27,6 @@ impl<'p> Parse<'p> for Ident<'p> {
             .parse_while(|ch| matches!(ch, 'a'..='z' | '0'..='9' | '_'))
             .map(Self)
             .ok_or(ParseError)
-    }
-}
-
-#[derive(Hash, Debug, Clone, PartialEq, Eq)]
-pub struct IdentOwned(String);
-
-impl IdentOwned {
-    pub fn as_ref(&self) -> Ident {
-        Ident(&self.0)
     }
 }
 
