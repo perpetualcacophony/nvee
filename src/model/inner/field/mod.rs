@@ -7,39 +7,39 @@ pub use parse::Error as ParseError;
 pub use parse::CONSTRUCTOR;
 
 #[derive(Hash, Clone, Debug, PartialEq, Eq)]
-pub struct Field {
-    key: crate::Key,
-    value: crate::Value,
+pub struct Field<'kv> {
+    key: crate::Key<'kv>,
+    value: crate::Value<'kv>,
 }
 
-impl Field {
-    pub fn key(&self) -> &crate::Key {
+impl<'kv> Field<'kv> {
+    pub fn key(&self) -> &crate::Key<'kv> {
         &self.key
     }
 
-    pub fn value(&self) -> &crate::Value {
-        &self.value
+    pub fn value(&self) -> crate::Value<'kv> {
+        self.value
     }
 
-    pub fn to_kv(self) -> (crate::Key, crate::Value) {
+    pub fn to_kv(self) -> (crate::Key<'kv>, crate::Value<'kv>) {
         (self.key, self.value)
     }
 
-    pub fn with_parent(&self, key: &crate::Key) -> Self {
+    pub fn with_parent(&'kv self, key: &'kv crate::Key<'kv>) -> Self {
         Self {
-            key: key.chain(self.key()),
-            value: self.value.clone(),
+            key: key.chain(&self.key),
+            value: self.value,
         }
     }
 }
 
-impl fmt::Display for Field {
+impl fmt::Display for Field<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{key} = {value}", key = self.key(), value = self.value())
     }
 }
 
-impl crate::set::KeyEq for Field {
+impl crate::set::KeyEq for Field<'_> {
     fn key(&self) -> &super::Key {
         self.key()
     }

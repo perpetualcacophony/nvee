@@ -3,22 +3,16 @@ use crate::{Field, Parse, Set, Table};
 mod parse;
 pub use parse::Error as ParseError;
 
-use super::{Key, Value};
+use super::Key;
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
-pub struct Document {
+pub struct Document<'a> {
     basename: Option<String>,
-    fields: Set<Field>,
-    tables: Set<Table>,
+    fields: Set<'a, Field<'a>>,
+    tables: Set<'a, Table<'a>>,
 }
 
-impl Document {
-    pub fn base_key(&self) -> Option<Key> {
-        self.basename
-            .as_deref()
-            .and_then(|s| Key::parse_str(s).ok())
-    }
-
+impl<'a> Document<'a> {
     pub fn set_basename(&mut self, value: String) {
         self.basename = Some(value)
     }
@@ -31,20 +25,33 @@ impl Document {
         self.tables.iter()
     }
 
-    pub fn vars(self) -> impl Iterator<Item = (Key, Value)> {
-        let base = self.base_key();
+    pub fn vars(self) -> impl Iterator<Item = (String, String)> {
+        let Self {
+            basename,
+            fields,
+            tables,
+        } = self;
+
+        let base = basename.as_deref().and_then(|s| Key::parse_str(s).ok());
 
         let vec: Vec<(_, _)> = {
-            let chained = self
-                .fields
+            let chained = fields
                 .into_iter()
-                .chain(self.tables.into_iter().flat_map(Table::into_fields))
-                .map(Field::to_kv);
+                .chain(tables.iter().flat_map(Table::fields));
 
             if let Some(base) = base {
-                chained.map(|(k, v)| (base.chain(&k), v)).collect()
+                chained
+                    .map(move |field| {
+                        (
+                            base.chain(field.key()).to_string(),
+                            field.value().to_string(),
+                        )
+                    })
+                    .collect()
             } else {
-                chained.collect()
+                chained
+                    .map(|field| (field.key().to_string(), field.value().to_string()))
+                    .collect()
             }
         };
 
@@ -74,12 +81,10 @@ impl Document {
         let mut already_set = Vec::new();
 
         for (key, value) in self.vars() {
-            let key = key.var_name();
-
             if std::env::var(&key).is_ok() {
                 already_set.push(key);
             } else {
-                std::env::set_var(key, value.var())
+                std::env::set_var(key, value)
             }
         }
 
@@ -110,12 +115,10 @@ mod tests {
 
     use std::env;
 
-    impl Document {
+    impl Document<'_> {
         fn with_vars(self, f: impl FnOnce()) {
             temp_env::with_vars(
-                self.vars()
-                    .map(|(k, v)| (k.var_name(), Some(v.var())))
-                    .collect::<Vec<_>>(),
+                self.vars().map(|(k, v)| (k, Some(v))).collect::<Vec<_>>(),
                 f,
             )
         }

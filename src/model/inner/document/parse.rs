@@ -1,13 +1,13 @@
 use crate::{
     model::{field, table},
-    Key, Parse, Set,
+    Parse, Set,
 };
 
 use super::Document;
 
 #[derive(Debug)]
 pub enum Error {
-    DuplicateKey(Key),
+    DuplicateKey(String),
     Field(field::ParseError),
     Table(table::ParseError),
 }
@@ -24,11 +24,11 @@ impl From<table::ParseError> for Error {
     }
 }
 
-impl crate::Sealed for Document {}
-impl Parse for Document {
+impl crate::Sealed for Document<'_> {}
+impl<'p> Parse<'p> for Document<'p> {
     type Err = Error;
 
-    fn parse(input: &mut crate::Parser<'_>) -> Result<Self, Self::Err> {
+    fn parse(input: &mut crate::Parser<'p>) -> Result<Self, Self::Err> {
         let mut fields = Set::new();
         let mut tables = Set::new();
 
@@ -87,7 +87,7 @@ pub(super) mod tests {
 
         tables.insert(table! {
             ["db"]
-            "url" = Value::String("https://example.com".to_owned())
+            "url" = Value::String("https://example.com")
             "port" = Value::Integer(2020)
         });
 

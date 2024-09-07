@@ -9,20 +9,20 @@ pub use parse::Error as ParseError;
 pub use parse::CONSTRUCTOR;
 
 #[derive(Hash, Clone, Debug, PartialEq, Eq)]
-pub struct Key {
-    segments: Vec<Ident>,
+pub struct Key<'id> {
+    segments: Vec<Ident<'id>>,
 }
 
-impl Key {
+impl<'a> Key<'a> {
     pub const SEPARATOR: char = '.';
 
-    pub fn last_segment(&self) -> &Ident {
+    pub fn last_segment(&self) -> &Ident<'a> {
         self.segments
             .last()
             .expect("must have at least one segment")
     }
 
-    pub fn first_segment(&self) -> &Ident {
+    pub fn first_segment(&self) -> &Ident<'a> {
         self.segments
             .first()
             .expect("must have at least one segment")
@@ -37,22 +37,20 @@ impl Key {
         vec.join("_")
     }
 
-    pub fn chain(&self, rhs: &Self) -> Self {
+    pub fn chain(&'a self, next: &'a Self) -> Self {
         Self {
-            segments: self.segments().chain(rhs.segments()).cloned().collect(),
+            segments: self.segments().chain(next.segments()).collect(),
         }
     }
 }
 
-impl fmt::Display for Key {
+impl fmt::Display for Key<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use fmt::Write;
-
         self.first_segment().fmt(f)?;
 
         for segment in self.segments().skip(1) {
-            f.write_char(Self::SEPARATOR)?;
-            f.write_str(segment)?;
+            Self::SEPARATOR.fmt(f)?;
+            segment.fmt(f)?;
         }
 
         Ok(())
@@ -60,7 +58,7 @@ impl fmt::Display for Key {
 }
 
 pub struct Segments<'path> {
-    inner: std::slice::Iter<'path, Ident>,
+    inner: std::slice::Iter<'path, Ident<'path>>,
 }
 
 impl<'path> Segments<'path> {
@@ -72,9 +70,9 @@ impl<'path> Segments<'path> {
 }
 
 impl<'path> Iterator for Segments<'path> {
-    type Item = &'path Ident;
+    type Item = Ident<'path>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
+        self.inner.next().copied()
     }
 }

@@ -24,11 +24,12 @@ impl From<value::ParseError> for Error {
     }
 }
 
-impl crate::Sealed for Field {}
-impl Parse for Field {
+impl crate::Sealed for Field<'_> {}
+// hell
+impl<'p: 'kv, 'kv> Parse<'p> for Field<'kv> {
     type Err = Error;
 
-    fn parse(input: &mut crate::Parser<'_>) -> Result<Self, Self::Err> {
+    fn parse(input: &mut crate::Parser<'p>) -> Result<Self, Self::Err> {
         let key = input.parse()?;
         input.parse::<Separator>()?;
         let value = input.parse()?;
@@ -40,10 +41,10 @@ impl Parse for Field {
 struct Separator;
 
 impl crate::Sealed for Separator {}
-impl Parse for Separator {
+impl<'p> Parse<'p> for Separator {
     type Err = Error;
 
-    fn parse(input: &mut crate::Parser<'_>) -> Result<Self, Self::Err> {
+    fn parse(input: &mut crate::Parser<'p>) -> Result<Self, Self::Err> {
         (input.parse_char(' ') && input.parse_char('=') && input.parse_char(' '))
             .then_some(Self)
             .ok_or(Error::Separator)
@@ -57,7 +58,7 @@ pub use tests::CONSTRUCTOR;
 mod tests {
     use crate::Value;
 
-    pub const CONSTRUCTOR: fn((&'static [&'static str], Value)) -> super::Field =
+    pub const CONSTRUCTOR: fn((&'static [&'static str], Value<'static>)) -> super::Field<'static> =
         |(key, value)| super::Field {
             key: crate::model::key::CONSTRUCTOR(key),
             value,
@@ -71,7 +72,7 @@ mod tests {
                 ("preen = 100", (["preen"].as_slice(), Value::Integer(100))),
                 (
                     r#"beep.boop = "top""#,
-                    (["beep", "boop"].as_slice(), Value::String("top".to_owned())),
+                    (["beep", "boop"].as_slice(), Value::String("top")),
                 ),
             ],
         );

@@ -2,7 +2,7 @@ use crate::Set;
 
 use crate::{
     model::{field, key},
-    Field, Key, Parse,
+    Field, Parse,
 };
 
 use super::Table;
@@ -12,7 +12,7 @@ pub enum Error {
     Name(Option<key::ParseError>),
     Field(field::ParseError),
     MissingDelimiter,
-    DuplicateKey(Key),
+    DuplicateKey(String),
 }
 
 impl From<key::ParseError> for Error {
@@ -33,11 +33,11 @@ impl Error {
     }
 }
 
-impl crate::Sealed for Table {}
-impl Parse for Table {
+impl crate::Sealed for Table<'_> {}
+impl<'p> Parse<'p> for Table<'p> {
     type Err = Error;
 
-    fn parse(input: &mut crate::Parser<'_>) -> Result<Self, Self::Err> {
+    fn parse(input: &mut crate::Parser<'p>) -> Result<Self, Self::Err> {
         if !input.parse_char('[') {
             return Err(Error::name());
         }
@@ -61,7 +61,7 @@ impl Parse for Table {
             let field = input.parse::<Field>()?;
             let key = field.key().to_owned();
             if !fields.insert(field) {
-                return Err(Error::DuplicateKey(key));
+                return Err(Error::DuplicateKey(key.to_string()));
             }
 
             input.parse_char_with(|ch| matches!(ch, '\n' | ' '));
@@ -102,7 +102,7 @@ mod tests {
                     "[mongodb]\nusername = \"kate\"\nport = 999",
                     construct! {
                         ["mongodb"]
-                        "username" = Value::String("kate".to_owned())
+                        "username" = Value::String("kate")
                         "port" = Value::Integer(999)
                     },
                 ),
@@ -110,7 +110,7 @@ mod tests {
                     "[mongo.db] username = \"kate\" port.alt = 999",
                     construct! {
                         ["mongo"."db"]
-                        "username" = Value::String("kate".to_owned())
+                        "username" = Value::String("kate")
                         "port"."alt" = Value::Integer(999)
                     },
                 ),
@@ -119,6 +119,6 @@ mod tests {
     }
 
     test_invalid! {
-        super::Key: "", " ", ".", "bip.", ".leading",
+        crate::Key: "", " ", ".", "bip.", ".leading",
     }
 }

@@ -4,36 +4,44 @@ use crate::Parse;
 
 pub const CHAR_LEGAL: fn(char) -> bool = |ch| matches!(ch, 'a'..='z' | '0'..='9' | '_');
 
-#[derive(Hash, Debug, Clone, PartialEq, Eq)]
-pub struct Ident(String);
+#[derive(Hash, Debug, Clone, PartialEq, Eq, Copy)]
+pub struct Ident<'s>(&'s str);
 
-impl Deref for Ident {
+impl<'s> Ident<'s> {
+    pub fn into_owned(self) -> IdentOwned {
+        IdentOwned(self.0.to_owned())
+    }
+}
+
+impl Deref for Ident<'_> {
     type Target = str;
 
     fn deref(&self) -> &Self::Target {
-        self.0.deref()
+        self.0
     }
 }
 
 #[derive(Debug)]
 pub struct ParseError;
 
-impl crate::Sealed for Ident {}
-impl Parse for Ident {
+impl crate::Sealed for Ident<'_> {}
+impl<'p> Parse<'p> for Ident<'p> {
     type Err = ParseError;
 
-    fn parse(input: &mut crate::Parser<'_>) -> Result<Self, Self::Err> {
-        let mut s = String::new();
+    fn parse(input: &mut crate::Parser<'p>) -> Result<Self, Self::Err> {
+        input
+            .parse_while(|ch| matches!(ch, 'a'..='z' | '0'..='9' | '_'))
+            .map(Self)
+            .ok_or(ParseError)
+    }
+}
 
-        while let Some(ch) = input.parse_char_with(|ch| matches!(ch, 'a'..='z' | '0'..='9' | '_')) {
-            s.push(ch)
-        }
+#[derive(Hash, Debug, Clone, PartialEq, Eq)]
+pub struct IdentOwned(String);
 
-        if s.is_empty() {
-            Err(ParseError)
-        } else {
-            Ok(Self(s))
-        }
+impl IdentOwned {
+    pub fn as_ref(&self) -> Ident {
+        Ident(&self.0)
     }
 }
 
@@ -42,7 +50,7 @@ pub use tests::CONSTRUCTOR;
 
 #[cfg(test)]
 mod tests {
-    pub const CONSTRUCTOR: fn(&'static str) -> super::Ident = |s| super::Ident(s.to_owned());
+    pub const CONSTRUCTOR: fn(&'static str) -> super::Ident = super::Ident;
 
     #[test]
     fn valid() {

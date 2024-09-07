@@ -17,24 +17,15 @@ impl From<ParseIntError> for Error {
     }
 }
 
-impl crate::Sealed for Value {}
-impl Parse for Value {
+impl crate::Sealed for Value<'_> {}
+impl<'p> Parse<'p> for Value<'p> {
     type Err = Error;
 
-    fn parse(input: &mut crate::Parser<'_>) -> Result<Self, Self::Err> {
+    fn parse(input: &mut crate::Parser<'p>) -> Result<Self, Self::Err> {
         if input.peek_char() == Some('"') {
             input.next_char();
 
-            let mut s = String::new();
-
-            loop {
-                match input.next_char() {
-                    Some('"') => break,
-                    Some(other) => s.push(other),
-                    _ => return Err(Error::UnclosedString),
-                }
-            }
-
+            let s = input.parse_while(|ch| ch != &'"').unwrap_or_default();
             Ok(Self::String(s))
         } else {
             Ok(Self::Integer(input.parse()?))
@@ -47,10 +38,10 @@ mod tests {
     use super::Value;
 
     fn string(s: &str) -> Value {
-        Value::String(s.to_owned())
+        Value::String(s)
     }
 
-    fn integer(int: u64) -> Value {
+    fn integer(int: u64) -> Value<'static> {
         Value::Integer(int)
     }
 

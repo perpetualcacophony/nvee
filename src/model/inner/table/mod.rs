@@ -6,34 +6,27 @@ mod parse;
 pub use parse::Error as ParseError;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Table {
-    name: crate::Key,
-    fields: Set<Field>,
+pub struct Table<'a> {
+    name: crate::Key<'a>,
+    fields: Set<'a, Field<'a>>,
 }
 
-impl Table {
-    pub fn name(&self) -> &crate::Key {
+impl<'a> Table<'a> {
+    pub fn name(&self) -> &crate::Key<'a> {
         &self.name
     }
 
     #[allow(dead_code)] // used in a test macro
-    pub(crate) fn new(name: crate::Key, fields: Set<Field>) -> Self {
+    pub(crate) fn new(name: crate::Key<'a>, fields: Set<'a, Field<'a>>) -> Self {
         Self { name, fields }
     }
 
     pub fn fields(&self) -> Fields {
         Fields::from_table(self)
     }
-
-    pub fn into_fields(self) -> IntoFields {
-        IntoFields {
-            table_name: self.name,
-            inner: self.fields.into_iter(),
-        }
-    }
 }
 
-impl fmt::Display for Table {
+impl fmt::Display for Table<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "[{}]", self.name())?;
 
@@ -46,8 +39,8 @@ impl fmt::Display for Table {
 }
 
 pub struct Fields<'table> {
-    table_name: &'table crate::Key,
-    inner: <&'table Set<Field> as IntoIterator>::IntoIter,
+    table_name: &'table crate::Key<'table>,
+    inner: <&'table Set<'table, Field<'table>> as IntoIterator>::IntoIter,
 }
 
 impl<'table> Fields<'table> {
@@ -60,7 +53,7 @@ impl<'table> Fields<'table> {
 }
 
 impl<'table> Iterator for Fields<'table> {
-    type Item = Field;
+    type Item = Field<'table>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner
@@ -69,22 +62,7 @@ impl<'table> Iterator for Fields<'table> {
     }
 }
 
-pub struct IntoFields {
-    table_name: crate::Key,
-    inner: <Set<Field> as IntoIterator>::IntoIter,
-}
-
-impl Iterator for IntoFields {
-    type Item = Field;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner
-            .next()
-            .map(|field| field.with_parent(&self.table_name))
-    }
-}
-
-impl crate::set::KeyEq for Table {
+impl crate::set::KeyEq for Table<'_> {
     fn key(&self) -> &super::Key {
         self.name()
     }

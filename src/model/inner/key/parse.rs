@@ -2,11 +2,11 @@ use crate::{model::ident, Parse};
 
 use super::Key;
 
-impl crate::Sealed for Key {}
-impl Parse for Key {
+impl crate::Sealed for Key<'_> {}
+impl<'p> Parse<'p> for Key<'p> {
     type Err = Error;
 
-    fn parse(input: &mut crate::Parser<'_>) -> Result<Self, Self::Err> {
+    fn parse(input: &mut crate::Parser<'p>) -> Result<Self, Self::Err> {
         if input.peek_char() == Some(Self::SEPARATOR) {
             return Err(Error::LeadingSeparator);
         }
@@ -43,13 +43,14 @@ pub use tests::CONSTRUCTOR;
 
 #[cfg(test)]
 mod tests {
-    pub const CONSTRUCTOR: fn(&'static [&'static str]) -> super::Key = |input| super::Key {
-        segments: input
-            .iter()
-            .copied()
-            .map(crate::model::ident::CONSTRUCTOR)
-            .collect(),
-    };
+    pub const CONSTRUCTOR: fn(&'static [&'static str]) -> super::Key<'static> =
+        |input| super::Key::<'static> {
+            segments: input
+                .iter()
+                .copied()
+                .map(crate::model::ident::CONSTRUCTOR)
+                .collect(),
+        };
 
     #[test]
     fn valid() {

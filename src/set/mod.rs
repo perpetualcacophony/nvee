@@ -3,17 +3,17 @@ use std::{collections::HashSet, hash::Hash};
 use crate::Key;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Set<Item: KeyEq> {
-    inner: HashSet<HashByKey<Item>>,
+pub struct Set<'item, Item: KeyEq> {
+    inner: HashSet<HashByKey<'item, Item>>,
 }
 
-impl<T: KeyEq> Set<T> {
+impl<T: KeyEq> Set<'_, T> {
     pub fn new() -> Self {
         Self::default()
     }
 }
 
-impl<T: KeyEq> Default for Set<T> {
+impl<T: KeyEq> Default for Set<'_, T> {
     fn default() -> Self {
         Self {
             inner: Default::default(),
@@ -21,11 +21,11 @@ impl<T: KeyEq> Default for Set<T> {
     }
 }
 
-impl<Item> Set<Item>
+impl<'a, Item> Set<'a, Item>
 where
     Item: KeyEq,
 {
-    pub fn get(&self, key: Key) -> Option<&Item> {
+    pub fn get(&'a self, key: Key<'a>) -> Option<&'a Item> {
         self.inner
             .get(&HashByKey::Dummy(key))
             .map(|wrapper| wrapper.item().expect("items in set should be wrappers"))
@@ -46,7 +46,7 @@ where
     }
 }
 
-impl<'set, Item> IntoIterator for &'set Set<Item>
+impl<'set, Item> IntoIterator for &'set Set<'_, Item>
 where
     Item: KeyEq,
 {
@@ -59,7 +59,7 @@ where
 }
 
 pub struct Iter<'set, Item> {
-    inner: std::collections::hash_set::Iter<'set, HashByKey<Item>>,
+    inner: std::collections::hash_set::Iter<'set, HashByKey<'set, Item>>,
 }
 
 impl<'set, Item> Iterator for Iter<'set, Item> {
@@ -70,11 +70,11 @@ impl<'set, Item> Iterator for Iter<'set, Item> {
     }
 }
 
-pub struct IntoIter<Item> {
-    inner: std::collections::hash_set::IntoIter<HashByKey<Item>>,
+pub struct IntoIter<'item, Item> {
+    inner: std::collections::hash_set::IntoIter<HashByKey<'item, Item>>,
 }
 
-impl<Item> Iterator for IntoIter<Item> {
+impl<Item> Iterator for IntoIter<'_, Item> {
     type Item = Item;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -82,8 +82,8 @@ impl<Item> Iterator for IntoIter<Item> {
     }
 }
 
-impl<Item: KeyEq> IntoIterator for Set<Item> {
-    type IntoIter = IntoIter<Item>;
+impl<'item, Item: KeyEq> IntoIterator for Set<'item, Item> {
+    type IntoIter = IntoIter<'item, Item>;
     type Item = Item;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -102,12 +102,12 @@ pub trait KeyEq: crate::Sealed {
 }
 
 #[derive(Clone, Debug)]
-enum HashByKey<T> {
+enum HashByKey<'k, T> {
     Item(T),
-    Dummy(Key),
+    Dummy(Key<'k>),
 }
 
-impl<T> HashByKey<T> {
+impl<T> HashByKey<'_, T> {
     fn item(&self) -> Option<&T> {
         if let Self::Item(t) = self {
             Some(t)
@@ -125,14 +125,14 @@ impl<T> HashByKey<T> {
     }
 }
 
-impl<T> From<T> for HashByKey<T> {
+impl<T> From<T> for HashByKey<'_, T> {
     fn from(value: T) -> Self {
         Self::Item(value)
     }
 }
 
-impl<T: KeyEq> crate::Sealed for HashByKey<T> {}
-impl<T: KeyEq> KeyEq for HashByKey<T> {
+impl<T: KeyEq> crate::Sealed for HashByKey<'_, T> {}
+impl<T: KeyEq> KeyEq for HashByKey<'_, T> {
     fn key(&self) -> &crate::Key {
         match self {
             Self::Dummy(key) => key,
@@ -141,7 +141,7 @@ impl<T: KeyEq> KeyEq for HashByKey<T> {
     }
 }
 
-impl<T> PartialEq for HashByKey<T>
+impl<T> PartialEq for HashByKey<'_, T>
 where
     Self: KeyEq,
 {
@@ -150,9 +150,9 @@ where
     }
 }
 
-impl<T> Eq for HashByKey<T> where Self: KeyEq {}
+impl<T> Eq for HashByKey<'_, T> where Self: KeyEq {}
 
-impl<T> Hash for HashByKey<T>
+impl<T> Hash for HashByKey<'_, T>
 where
     Self: KeyEq,
 {
