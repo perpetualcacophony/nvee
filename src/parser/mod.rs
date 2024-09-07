@@ -45,7 +45,13 @@ impl<'i> Parser<'i> {
 
         if counter != 0 {
             let output = &self.input[..counter];
-            self.input = &self.input[counter + 1..];
+
+            if self.input.len() <= counter {
+                self.input = "";
+            } else {
+                self.input = &self.input[counter + 1..];
+            }
+
             Some(output)
         } else {
             None
