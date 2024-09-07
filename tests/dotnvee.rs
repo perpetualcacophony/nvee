@@ -6,7 +6,7 @@ fn assert_vars(iter: impl IntoIterator<Item = (&'static str, &'static str)>) {
 
 #[test]
 fn main() {
-    nvee::dotnvee().expect("loading .nvee file should not fail");
+    nvee::from_path("tests/.nvee").expect("loading .nvee file should not fail");
 
     assert_vars([
         ("AUTHOR", "kate"),

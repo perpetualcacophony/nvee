@@ -110,5 +110,5 @@ pub fn from_path(path: impl AsRef<std::path::Path>) -> Result<(), Error> {
 }
 
 pub fn dotnvee() -> Result<(), Error> {
-    from_path(std::path::Path::new(".nvee"))
+    return from_path(std::path::Path::new(".nvee"));
 }

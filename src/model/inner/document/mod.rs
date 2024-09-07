@@ -117,17 +117,23 @@ mod tests {
                 f,
             )
         }
+
+        fn assert_vars(self, vars: impl IntoIterator<Item = (&'static str, Option<&'static str>)>) {
+            self.with_vars(|| {
+                for (k, v) in vars {
+                    pretty_assertions::assert_eq!(env::var(k).as_deref().ok(), v);
+                }
+            });
+        }
     }
 
     #[test]
     fn set_vars() {
         let document = Document::parse_str(parse::tests::EXAMPLE).expect("parsing should not fail");
-
-        document.with_vars(|| {
-            pretty_assertions::assert_eq!(env::var("DB_URL").as_deref(), Ok("https://example.com"));
-
-            pretty_assertions::assert_eq!(env::var("DB_PORT").as_deref(), Ok("2020"));
-        });
+        document.assert_vars([
+            ("DB_URL", Some("https://example.com")),
+            ("DB_PORT", Some("2020")),
+        ]);
     }
 
     #[test]
@@ -136,13 +142,9 @@ mod tests {
             Document::parse_str(parse::tests::EXAMPLE).expect("parsing should not fail");
         document.set_basename("example".to_owned());
 
-        document.with_vars(|| {
-            pretty_assertions::assert_eq!(
-                env::var("EXAMPLE_DB_URL").as_deref(),
-                Ok("https://example.com")
-            );
-
-            pretty_assertions::assert_eq!(env::var("EXAMPLE_DB_PORT").as_deref(), Ok("2020"));
-        });
+        document.assert_vars([
+            ("EXAMPLE_DB_URL", Some("https://example.com")),
+            ("EXAMPLE_DB_PORT", Some("2020")),
+        ]);
     }
 }
